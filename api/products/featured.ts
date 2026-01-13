@@ -1,5 +1,5 @@
-import { fetchFeaturedProducts } from '../_lib/sanity'
-import { json, text } from '../_lib/http'
+import { fetchFeaturedProducts } from '../_lib/sanity.js'
+import { json, text } from '../_lib/http.js'
 
 export const config = { runtime: 'nodejs' } as const
 

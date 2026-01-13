@@ -1,6 +1,6 @@
 import Stripe from 'stripe'
-import { json, text } from './_lib/http'
-import { getStripe } from './_lib/stripe'
+import { json, text } from './_lib/http.js'
+import { getStripe } from './_lib/stripe.js'
 
 export const config = { runtime: 'nodejs' } as const
 

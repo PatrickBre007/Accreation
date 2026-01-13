@@ -1,8 +1,8 @@
 import Stripe from 'stripe'
 import { z } from 'zod'
-import { json, readJsonBody, text, getBaseUrl } from './_lib/http'
-import { fetchProductsByIds } from './_lib/sanity'
-import { getStripe } from './_lib/stripe'
+import { json, readJsonBody, text, getBaseUrl } from './_lib/http.js'
+import { fetchProductsByIds } from './_lib/sanity.js'
+import { getStripe } from './_lib/stripe.js'
 
 export const config = { runtime: 'nodejs' } as const
 
