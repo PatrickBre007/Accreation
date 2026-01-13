@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
 
 export type CartItem = {
   productId: string
@@ -63,6 +63,7 @@ export const useCartStore = create<CartState>()(
     {
       name: 'accreation_cart_v1',
       version: 1,
+      storage: createJSONStorage(() => sessionStorage),
     },
   ),
 )
