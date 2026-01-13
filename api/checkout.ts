@@ -4,6 +4,8 @@ import { json, readJsonBody, text, getBaseUrl } from './_lib/http'
 import { fetchProductsByIds } from './_lib/sanity'
 import { getStripe } from './_lib/stripe'
 
+export const config = { runtime: 'nodejs' } as const
+
 type ApiReq = import('node:http').IncomingMessage & {
   query?: Record<string, string | string[] | undefined>
   method?: string

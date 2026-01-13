@@ -2,6 +2,8 @@ import Stripe from 'stripe'
 import { json, text } from './_lib/http'
 import { getStripe } from './_lib/stripe'
 
+export const config = { runtime: 'nodejs' } as const
+
 type ApiReq = import('node:http').IncomingMessage & {
   query?: Record<string, string | string[] | undefined>
   method?: string

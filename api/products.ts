@@ -1,6 +1,8 @@
 import { fetchAllProducts } from './_lib/sanity'
 import { json, text } from './_lib/http'
 
+export const config = { runtime: 'nodejs' } as const
+
 export default async function handler(_req: unknown, res: import('node:http').ServerResponse) {
   try {
     const products = await fetchAllProducts()

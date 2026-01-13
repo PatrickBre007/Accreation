@@ -1,5 +1,3 @@
-import { createClient } from '@sanity/client'
-
 export type ApiProduct = {
   id: string
   title: string
@@ -23,27 +21,47 @@ function eurToCents(value: number) {
   return Math.max(0, Math.round(value * 100))
 }
 
-export function getSanityClient() {
-  const sanityProjectId = process.env.SANITY_PROJECT_ID
-  const sanityDataset = process.env.SANITY_DATASET ?? 'production'
-  const sanityApiVersion = process.env.SANITY_API_VERSION ?? '2025-01-01'
-  const sanityReadToken = process.env.SANITY_READ_TOKEN
+type SanityQueryResponse<T> = {
+  result: T
+}
 
-  if (!sanityProjectId) return null
+function getSanityConfig() {
+  const projectId = (process.env.SANITY_PROJECT_ID ?? '').trim()
+  const dataset = (process.env.SANITY_DATASET ?? 'production').trim()
+  const apiVersion = (process.env.SANITY_API_VERSION ?? '2025-01-01').trim()
+  const token = (process.env.SANITY_READ_TOKEN ?? '').trim()
 
-  return createClient({
-    projectId: sanityProjectId,
-    dataset: sanityDataset,
-    apiVersion: sanityApiVersion,
-    useCdn: true,
-    token: sanityReadToken,
+  if (!projectId) throw new Error('SANITY_PROJECT_ID mancante')
+  return { projectId, dataset, apiVersion, token }
+}
+
+async function sanityQuery<T>(query: string, params?: Record<string, unknown>): Promise<T> {
+  const { projectId, dataset, apiVersion, token } = getSanityConfig()
+
+  const base = `https://${projectId}.api.sanity.io/v${apiVersion}/data/query/${dataset}`
+  const url = new URL(base)
+  url.searchParams.set('query', query)
+
+  if (params) {
+    for (const [k, v] of Object.entries(params)) {
+      url.searchParams.set(`$${k}`, JSON.stringify(v))
+    }
+  }
+
+  const res = await fetch(url.toString(), {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   })
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '')
+    throw new Error(txt || `Sanity API ${res.status}`)
+  }
+
+  const data = (await res.json()) as SanityQueryResponse<T>
+  return data.result
 }
 
 export async function fetchAllProducts(): Promise<ApiProduct[]> {
-  const sanity = getSanityClient()
-  if (!sanity) throw new Error('SANITY_PROJECT_ID mancante')
-
   const query = `*[_type=="product"] | order(_createdAt desc) {
     "id": _id,
     "title": name,
@@ -53,7 +71,7 @@ export async function fetchAllProducts(): Promise<ApiProduct[]> {
     "imageUrl": image.asset->url
   }`
 
-  const products = await sanity.fetch<SanityProduct[]>(query)
+  const products = await sanityQuery<SanityProduct[]>(query)
   return products.map((p) => ({
     id: p.id,
     title: p.title,
@@ -65,9 +83,6 @@ export async function fetchAllProducts(): Promise<ApiProduct[]> {
 }
 
 export async function fetchFeaturedProducts(limit: number): Promise<ApiProduct[]> {
-  const sanity = getSanityClient()
-  if (!sanity) throw new Error('SANITY_PROJECT_ID mancante')
-
   const safe = Number.isFinite(limit) ? Math.min(24, Math.max(1, Math.floor(limit))) : 6
 
   const query = `*[_type=="product"] | order(_createdAt desc)[0...$limit] {
@@ -79,7 +94,7 @@ export async function fetchFeaturedProducts(limit: number): Promise<ApiProduct[]
     "imageUrl": image.asset->url
   }`
 
-  const products = await sanity.fetch<SanityProduct[]>(query, { limit: safe })
+  const products = await sanityQuery<SanityProduct[]>(query, { limit: safe })
   return products.map((p) => ({
     id: p.id,
     title: p.title,
@@ -91,9 +106,6 @@ export async function fetchFeaturedProducts(limit: number): Promise<ApiProduct[]
 }
 
 export async function fetchProductsByIds(ids: string[]): Promise<ApiProduct[]> {
-  const sanity = getSanityClient()
-  if (!sanity) throw new Error('SANITY_PROJECT_ID mancante')
-
   const query = `*[_type=="product" && _id in $ids]{
     "id": _id,
     "title": name,
@@ -103,7 +115,7 @@ export async function fetchProductsByIds(ids: string[]): Promise<ApiProduct[]> {
     "imageUrl": image.asset->url
   }`
 
-  const products = await sanity.fetch<SanityProduct[]>(query, { ids })
+  const products = await sanityQuery<SanityProduct[]>(query, { ids })
   return products.map((p) => ({
     id: p.id,
     title: p.title,
